@@ -305,10 +305,16 @@
             color: var(--champagne);
             border-color: rgba(247, 231, 206, 0.3);
             position: relative;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .no-btn:hover {
-            transform: translateX(100px);
+        @media (hover: hover) {
+            .no-btn:hover {
+                transform: translateX(100px);
+            }
         }
 
         /* Celebration screen */
@@ -397,20 +403,79 @@
 
         /* Responsive */
         @media (max-width: 600px) {
+            .container {
+                padding: 30px 15px;
+            }
             .brief-header {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
+            }
+            .brief-subtitle {
+                font-size: 1rem;
+                margin-bottom: 30px;
             }
             .ask-title {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
             .ask-title .rose-text {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
+            }
+            .ask-subtitle {
+                font-size: 1rem;
+                padding: 0 10px;
+                margin-bottom: 40px;
             }
             .celebration-title {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
+            }
+            .celebration-text {
+                font-size: 1.1rem;
+                padding: 0 10px;
+            }
+            .metric-card {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+            .metric-label {
+                font-size: 0.75rem;
+                letter-spacing: 2px;
             }
             .metric-value {
-                font-size: 1.4rem;
+                font-size: 1.2rem;
+            }
+            .response-buttons {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+            }
+            .response-btn {
+                padding: 18px 50px;
+                font-size: 1.2rem;
+                width: 80%;
+                max-width: 250px;
+            }
+            .continue-btn {
+                padding: 15px 40px;
+                font-size: 1rem;
+            }
+            .kpi-final {
+                padding: 20px;
+                margin-top: 30px;
+            }
+            .kpi-final-value {
+                font-size: 1.8rem;
+            }
+            .envelope {
+                width: 160px;
+                height: 120px;
+            }
+            .envelope::before {
+                border-width: 60px 80px 0 80px;
+            }
+            .envelope-heart {
+                font-size: 32px;
+            }
+            .landing-text {
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -543,25 +608,74 @@
             const noBtn = document.getElementById('noBtn');
             let dodgeCount = 0;
             
-            noBtn.addEventListener('mouseover', () => {
+            // Detect if it's a touch device
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            
+            function dodgeButton(e) {
+                // Prevent default touch behavior
+                if (e.type === 'touchstart') {
+                    e.preventDefault();
+                }
+                
                 dodgeCount++;
-                const maxX = window.innerWidth - noBtn.offsetWidth - 50;
-                const maxY = window.innerHeight - noBtn.offsetHeight - 50;
+                
+                // Get button dimensions
+                const btnWidth = noBtn.offsetWidth;
+                const btnHeight = noBtn.offsetHeight;
+                
+                // Calculate safe bounds with padding
+                const padding = 20;
+                const maxX = window.innerWidth - btnWidth - padding;
+                const maxY = window.innerHeight - btnHeight - padding;
+                
+                // Generate random position ensuring it's visible
+                let newX = Math.random() * (maxX - padding) + padding;
+                let newY = Math.random() * (maxY - padding) + padding;
+                
+                // Ensure minimum distance from current position on mobile
+                if (isTouchDevice && noBtn.style.position === 'fixed') {
+                    const currentX = parseFloat(noBtn.style.left) || 0;
+                    const currentY = parseFloat(noBtn.style.top) || 0;
+                    const minDistance = 100;
+                    
+                    // If too close, push it further
+                    while (Math.abs(newX - currentX) < minDistance && Math.abs(newY - currentY) < minDistance) {
+                        newX = Math.random() * (maxX - padding) + padding;
+                        newY = Math.random() * (maxY - padding) + padding;
+                    }
+                }
                 
                 noBtn.style.position = 'fixed';
-                noBtn.style.left = Math.random() * maxX + 'px';
-                noBtn.style.top = Math.random() * maxY + 'px';
-                noBtn.style.transition = 'all 0.3s ease';
+                noBtn.style.left = newX + 'px';
+                noBtn.style.top = newY + 'px';
+                noBtn.style.transition = 'all 0.25s ease';
+                noBtn.style.zIndex = '50';
                 
-                if (dodgeCount > 3) {
-                    noBtn.textContent = 'Nice try! 😏';
+                // Update button text based on attempts
+                if (dodgeCount === 2) {
+                    noBtn.textContent = 'Nope! 😏';
+                } else if (dodgeCount === 4) {
+                    noBtn.textContent = 'Nice try! 🙈';
+                } else if (dodgeCount === 6) {
+                    noBtn.textContent = 'Give up! 💕';
+                } else if (dodgeCount === 8) {
+                    noBtn.textContent = 'Say YES! 💝';
+                } else if (dodgeCount >= 10) {
+                    noBtn.style.opacity = '0';
+                    setTimeout(() => {
+                        noBtn.style.display = 'none';
+                    }, 300);
                 }
-                if (dodgeCount > 6) {
-                    noBtn.textContent = 'Just say yes! 💕';
-                }
-                if (dodgeCount > 10) {
-                    noBtn.style.display = 'none';
-                }
+            }
+            
+            // Add both mouse and touch events
+            noBtn.addEventListener('mouseover', dodgeButton);
+            noBtn.addEventListener('touchstart', dodgeButton, { passive: false });
+            
+            // Also dodge on click/tap as backup
+            noBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                dodgeButton(e);
             });
         }
 

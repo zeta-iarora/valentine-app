@@ -277,6 +277,14 @@
             gap: 30px;
             justify-content: center;
             flex-wrap: wrap;
+            position: relative;
+            min-height: 200px;
+            align-items: center;
+        }
+        
+        .yes-btn {
+            position: relative;
+            z-index: 2;
         }
 
         .response-btn {
@@ -304,17 +312,12 @@
             background: transparent;
             color: var(--champagne);
             border-color: rgba(247, 231, 206, 0.3);
-            position: relative;
+            position: absolute;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        @media (hover: hover) {
-            .no-btn:hover {
-                transform: translateX(100px);
-            }
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         /* Celebration screen */
@@ -443,15 +446,14 @@
                 font-size: 1.2rem;
             }
             .response-buttons {
-                flex-direction: column;
-                gap: 20px;
-                align-items: center;
+                min-height: 280px;
             }
             .response-btn {
-                padding: 18px 50px;
-                font-size: 1.2rem;
-                width: 80%;
-                max-width: 250px;
+                padding: 16px 40px;
+                font-size: 1.1rem;
+            }
+            .yes-btn {
+                padding: 18px 45px;
             }
             .continue-btn {
                 padding: 15px 40px;
@@ -603,53 +605,49 @@
             setupNoButton();
         }
 
-        // Make the No button run away
+        // Make the No button orbit around Yes button
         function setupNoButton() {
             const noBtn = document.getElementById('noBtn');
+            const yesBtn = document.querySelector('.yes-btn');
+            let angle = 0; // Starting angle in degrees
             let dodgeCount = 0;
             
-            // Detect if it's a touch device
-            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            // Orbit radius - responsive based on screen size
+            const getRadius = () => window.innerWidth < 600 ? 120 : 160;
+            
+            // Position No button at initial angle
+            function positionNoButton() {
+                const radius = getRadius();
+                const radians = (angle * Math.PI) / 180;
+                
+                // Calculate position relative to center
+                const x = Math.cos(radians) * radius;
+                const y = Math.sin(radians) * radius;
+                
+                noBtn.style.transform = `translate(${x}px, ${y}px)`;
+            }
+            
+            // Initialize position (to the right of Yes button)
+            positionNoButton();
             
             function dodgeButton(e) {
                 // Prevent default touch behavior
-                if (e.type === 'touchstart') {
+                if (e.type === 'touchstart' || e.type === 'click') {
                     e.preventDefault();
+                    e.stopPropagation();
                 }
                 
                 dodgeCount++;
                 
-                // Get button dimensions
-                const btnWidth = noBtn.offsetWidth;
-                const btnHeight = noBtn.offsetHeight;
+                // Rotate by 60-120 degrees each time (randomized for fun)
+                const rotationAmount = 60 + Math.random() * 60;
+                angle += rotationAmount;
                 
-                // Calculate safe bounds with padding
-                const padding = 20;
-                const maxX = window.innerWidth - btnWidth - padding;
-                const maxY = window.innerHeight - btnHeight - padding;
+                // Keep angle in 0-360 range
+                angle = angle % 360;
                 
-                // Generate random position ensuring it's visible
-                let newX = Math.random() * (maxX - padding) + padding;
-                let newY = Math.random() * (maxY - padding) + padding;
-                
-                // Ensure minimum distance from current position on mobile
-                if (isTouchDevice && noBtn.style.position === 'fixed') {
-                    const currentX = parseFloat(noBtn.style.left) || 0;
-                    const currentY = parseFloat(noBtn.style.top) || 0;
-                    const minDistance = 100;
-                    
-                    // If too close, push it further
-                    while (Math.abs(newX - currentX) < minDistance && Math.abs(newY - currentY) < minDistance) {
-                        newX = Math.random() * (maxX - padding) + padding;
-                        newY = Math.random() * (maxY - padding) + padding;
-                    }
-                }
-                
-                noBtn.style.position = 'fixed';
-                noBtn.style.left = newX + 'px';
-                noBtn.style.top = newY + 'px';
-                noBtn.style.transition = 'all 0.25s ease';
-                noBtn.style.zIndex = '50';
+                // Apply new position
+                positionNoButton();
                 
                 // Update button text based on attempts
                 if (dodgeCount === 2) {
@@ -661,22 +659,22 @@
                 } else if (dodgeCount === 8) {
                     noBtn.textContent = 'Say YES! 💝';
                 } else if (dodgeCount >= 10) {
+                    // Shrink and fade away
+                    noBtn.style.transform += ' scale(0)';
                     noBtn.style.opacity = '0';
                     setTimeout(() => {
                         noBtn.style.display = 'none';
-                    }, 300);
+                    }, 400);
                 }
             }
             
             // Add both mouse and touch events
-            noBtn.addEventListener('mouseover', dodgeButton);
+            noBtn.addEventListener('mouseenter', dodgeButton);
             noBtn.addEventListener('touchstart', dodgeButton, { passive: false });
+            noBtn.addEventListener('click', dodgeButton);
             
-            // Also dodge on click/tap as backup
-            noBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                dodgeButton(e);
-            });
+            // Update position on resize
+            window.addEventListener('resize', positionNoButton);
         }
 
         // Say yes - celebration
